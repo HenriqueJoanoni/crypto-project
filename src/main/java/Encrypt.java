@@ -1,6 +1,8 @@
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Scanner;
 
 public class Encrypt {
@@ -36,6 +38,48 @@ public class Encrypt {
         }
 
         return content;
+    }
+
+    public static String saltPassword(String password) {
+        byte[] saltBytes = new byte[32];
+        SecureRandom rd = new SecureRandom();
+        rd.nextBytes(saltBytes);
+        return Base64.getEncoder().encodeToString(saltBytes);
+    }
+
+    public static boolean checkPassword(String password) {
+        String passwordPattern = "^[^-\\s]\\w{10}+$";
+        return password.matches(passwordPattern);
+    }
+
+    public static void writeIntoFile(String fileName, ArrayList<String> content) throws IOException {
+        try {
+            BufferedWriter wr = new BufferedWriter(new FileWriter(fileName));
+            for (String line : content) {
+                wr.write(line);
+                wr.newLine();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static BigInteger diffieHellmanEncrypt(int g, int p, int a, int b)
+    {
+        BigInteger A = BigInteger.valueOf((long) (Math.pow(g, a) % p));     //A = g^a mod p
+        BigInteger B = BigInteger.valueOf((long) (Math.pow(g, b) % p));     //B = g^b mod p
+
+        BigInteger s = B.modPow(BigInteger.valueOf(a), BigInteger.valueOf(p));  //s = B^a mod p
+        //Calculate the private keys for both parties to make sure they are the same - otherwise something has gone wrong
+        BigInteger sTest = A.modPow(BigInteger.valueOf(b), BigInteger.valueOf(p));  //s = A^b mod p
+
+        if (s.equals(sTest)) {  //Note: == doesn't work on BigInt - you need to use .equals
+            return s;
+        }
+        else {
+            System.out.println("Something went wrong while calculating Diffie-Hellman private key");
+            return BigInteger.valueOf(0);
+        }
     }
 
 }
